@@ -2,29 +2,50 @@
 title: "Clara"
 author: "Clara"
 date: "29 novembro 2017"
-output: pdf_document
+output: html_document
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-## R Markdown
+#Amapola
 
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+```{r echo=FALSE, comment=NA}
+library(gtrendsR)
+library(ggplot2)
+library(tidyverse)
+#We are creatin a dataframe using the package gtrendsR
+amapola.trend <- gtrends(c("amapola"), gprop = "web", time = "all")[[1]]
+#We check we created a data.frame
+class(amapola.trend)
+#And we show the first rows
+head(amapola.trend)
+#We check the class of the variable date in bitcoin dataframe
+class(amapola.trend$date)
 
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+#We plot a line with date in x and hits in y
+ggplot(data = amapola.trend) + geom_line(mapping = aes(x= date, y = hits))
+?gtrends
 
-```{r cars}
-summary(cars)
+amapola.trend <- amapola.trend %>% filter(date >= as.Date("2009-01-01"))
+c<-ggplot(data = amapola.trend) + 
+  geom_line(mapping = aes(x= date, y = hits)) +
+  geom_vline(xintercept = as.Date("2017-01-20"), color = "red") #trump inauguration
+c  
+
+library(Quandl)
+amapola.price <- Quandl("BCHARTS/BITSTAMPUSD")
+amapola.price <- amapola.price %>% filter(Date %in% amapola.trend$date) %>% select(Date, Close) %>% rename(date = Date, price = Close) %>% mutate(price = price*100/max(price))
+
+amapola <- left_join(x = amapola.trend, y= amapola.price, by = "date")
+head(amapola)
+
+a<-ggplot(data = amapola) + 
+  geom_line(mapping = aes(x= date, y = hits)) +
+  geom_line(mapping = aes(x= date, y = price), color = "gray") + 
+  geom_vline(xintercept = as.Date("2017-01-20"), color = "red")
+a
+
 ```
 
-## Including Plots
-
-You can also embed plots, for example:
-
-```{r pressure, echo=FALSE}
-plot(pressure)
-```
-
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
